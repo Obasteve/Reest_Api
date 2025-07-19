@@ -1,6 +1,8 @@
+// controllers/user.js
+
 import { v4 as uuidv4 } from 'uuid';
 
-let users=[]
+let users=[]   // in memory store
 
 export const createUser = (req, res) =>{
     try {
@@ -31,6 +33,7 @@ export const createUser = (req, res) =>{
 export const getUser = (req, res) => {
     try {
     const { id } = (req.params)
+
     const founduser= users.find((user)=> user.id == id)
     if(!founduser){
       return res.status(404).json({error}, `user with ID ${id} not found`)
