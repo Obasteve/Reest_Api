@@ -47,15 +47,15 @@ export const deleteUser = (req, res) =>{
     users = users.filter((user) => user.id !==id ) 
     res.send(`User with the ${id} deleted from the database`)
 }
-export const updateUser= (req, res)=>{
-    const { id } = req.params;
+export const updateUser = (req, res) => {
+  const { id } = req.params;
+  const { name, description } = req.body;
+  const user = users.find(user => user.id === id);
 
-    const { name,  description } = req.body
-    const user = users.find((user) => user.id==id)
+  if (!user) return res.status(404).send({ error: 'User not found' });
 
-    if(name) user.name = name
-    if(description) user.description = description
-    
+  if (name) user.name = name;
+  if (description) user.description = description;
 
-    res.send(`User with the id ${id} has been updated`)
+
 }
