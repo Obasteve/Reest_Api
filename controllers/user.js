@@ -1,64 +1,197 @@
-// controllers/user.js
 
 import { v4 as uuidv4 } from 'uuid';
 
-let users=[]   // in memory store
+// In-memory data store
+let users = [
+  {
+    id: uuidv4(),
+    firstName: "John",
+    lastName: "Doe",
+    description: "Software Developer"
+  },
+  {
+    id: uuidv4(),
+    firstName: "Jane",
+    lastName: "Smith",
+    description: "UI/UX Designer"
+  }
+];
 
-export const createUser = (req, res) =>{
-    try {
-    const { name, description }= req.body;
-    if (!name || !description) {
-    return res.status(400).json({ error: 'Name and description are required.' });
+// Validation helper function
+const validateUser = (userData) => {
+  const errors = [];
+  
+  if (!userData.firstName || userData.firstName.trim().length === 0) {
+    errors.push('firstName is required');
+  }
+  
+  if (!userData.lastName || userData.lastName.trim().length === 0) {
+    errors.push('lastName is required');
+  }
+  
+  if (!userData.description || userData.description.trim().length === 0) {
+    errors.push('description is required');
+  }
+  
+  return errors;
+};
+
+// GET all users
+export const getAllUsers = (req, res) => {
+  try {
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      data: users
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching users',
+      error: error.message
+    });
+  }
+};
+
+// GET single user by ID
+export const getUserById = (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = users.find(user => user.id === id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: `User with ID ${id} not found`
+      });
     }
     
-
-    users.push({...name, description, id:uuidv4()})
-  res.status(201).send(`user with the name ${name.firstname} added to the database`)
-
-} catch (error){
-    console.error(error)
-    res.status(500).json({error: 'Internal serval error'})
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching user',
+      error: error.message
+    });
+  }
 };
-}
 
- export const getUsers= (req, res) => {
-    try {
-    res.send(users)
-    } catch(error){
-        console.error(error)
-        res.status(500).json({error: 'Internal server error'})
+// POST - Create new user
+export const createUser = (req, res) => {
+  try {
+    const { firstName, lastName, description } = req.body;
+    
+    // Validate input
+    const validationErrors = validateUser({ firstName, lastName, description });
+    if (validationErrors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validationErrors
+      });
     }
-}
+    
+    // Create new user
+    const newUser = {
+      id: uuidv4(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      description: description.trim()
+    };
+    
+    users.push(newUser);
+    
+    res.status(201).json({
+      success: true,
+      message: 'User created successfully',
+      data: newUser
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error while creating user',
+      error: error.message
+    });
+  }
+};
 
-export const getUser = (req, res) => {
-    try {
-    const { id } = (req.params)
-
-    const founduser= users.find((user)=> user.id == id)
-    if(!founduser){
-      return res.status(404).json({error}, `user with ID ${id} not found`)
-    }
-
-    }catch(error){
-        console.error(error);
-        res.status(500).json({error: 'internal server error'})
-    }
-}
-
-export const deleteUser = (req, res) =>{
-    const {id} = req.params;
-    users = users.filter((user) => user.id !==id ) 
-    res.send(`User with the ${id} deleted from the database`)
-}
+// PUT - Update user by ID
 export const updateUser = (req, res) => {
-  const { id } = req.params;
-  const { name, description } = req.body;
-  const user = users.find(user => user.id === id);
+  try {
+    const { id } = req.params;
+    const { firstName, lastName, description } = req.body;
+    
+    // Find user
+    const userIndex = users.findIndex(user => user.id === id);
+    if (userIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: `User with ID ${id} not found`
+      });
+    }
+    
+    // Validate input
+    const validationErrors = validateUser({ firstName, lastName, description });
+    if (validationErrors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validationErrors
+      });
+    }
+    
+    // Update user
+    users[userIndex] = {
+      ...users[userIndex],
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      description: description.trim()
+    };
+    
+    res.status(200).json({
+      success: true,
+      message: 'User updated successfully',
+      data: users[userIndex]
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating user',
+      error: error.message
+    });
+  }
+};
 
-  if (!user) return res.status(404).send({ error: 'User not found' });
-
-  if (name) user.name = name;
-  if (description) user.description = description;
-
-
-}
+// DELETE - Delete user by ID
+export const deleteUser = (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Find user
+    const userIndex = users.findIndex(user => user.id === id);
+    if (userIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: `User with ID ${id} not found`
+      });
+    }
+    
+    // Remove user
+    const deletedUser = users.splice(userIndex, 1)[0];
+    
+    res.status(200).json({
+      success: true,
+      message: 'User deleted successfully',
+      data: deletedUser
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error while deleting user',
+      error: error.message
+    });
+  }
+};
